@@ -1,0 +1,15 @@
+version: '3.7'
+networks:
+  proxy_https_default:
+     external: true
+services:
+  provider:
+    build: .
+    ports:
+      - 1080:8080
+    environment:
+      - VIRTUAL_HOST=provider
+      - VIRTUAL_PORT=8080
+    restart: always
+    networks:
+      - proxy_https_default

@@ -51,7 +51,7 @@ GSM_CHARACTER_TABLE = (
 )
 
 
-def gsm_encode(plaintext):
+def gsm_encode2(plaintext):
     """Performs default GSM 7-bit encoding. Beware it's vendor-specific and not recommended for use."""
     try:
         return b''.join(
@@ -61,13 +61,38 @@ def gsm_encode(plaintext):
     except ValueError:
         raise UnicodeError(plaintext)
 
+import binascii
+gsm = ("@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞ\x1bÆæßÉ !\"#¤%&’()*+,-./0123456789:;<=>?"
+       "¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà")
+ext = ("````````````````````^```````````````````{}`````\\````````````[~]`"
+       "|````````````````````````````````````€``````````````````````````")
 
+def gsm_encode(plaintext):
+    res = ""
+    plaintext = plaintext.replace('œ', 'oe')
+    plaintext = plaintext.replace('æ', 'ae')
+    plaintext = plaintext.replace('Æ', 'AE')
+    plaintext = plaintext.replace('Œ', 'OE')
+    plaintext = plaintext.replace('ǽ', 'ae')
+    plaintext = plaintext.replace('Ǽ', 'AE')
+    for c in plaintext:
+        idx = gsm.find(c);
+        if idx != -1:
+            res += chr(idx)
+            continue
+        idx = ext.find(c)
+        if idx != -1:
+            res += chr(27) + chr(idx)
+        idx = GSM_CHARACTER_TABLE.find(c)
+        if idx != -1:
+            res += chr(idx)
+    return res.encode('utf-8')
 # Map GSM encoding into a tuple of encode function, maximum single message size and a part size.
 # Add new entry here should you need to use another encoding.
 ENCODINGS = {
     consts.SMPP_ENCODING_DEFAULT: (gsm_encode, consts.SEVENBIT_LENGTH, consts.SEVENBIT_PART_SIZE),
     consts.SMPP_ENCODING_ISO88591: (lambda text: text.encode('iso-8859-1'), consts.EIGHTBIT_LENGTH, consts.EIGHTBIT_PART_SIZE),
-    consts.SMPP_ENCODING_ISO10646: (lambda text: text.encode('utf-16-be'), consts.UCS2_LENGTH, consts.UCS2_PART_SIZE),
+    consts.SMPP_ENCODING_ISO10646: (lambda text: text.encode('utf-16'), consts.UCS2_LENGTH, consts.UCS2_PART_SIZE),
 }
 
 
