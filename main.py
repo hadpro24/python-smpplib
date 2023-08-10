@@ -8,7 +8,7 @@ import uvicorn
 import smpplib.gsm
 import smpplib.client
 import smpplib.consts
-from utils import PersistentSequenceGenerator, send_delivery_sm
+from utils import PersistentSequenceGenerator, send_delivery_sm, Message
 from couter import SMSCounter
 
 # if you want to know what's happening
@@ -70,23 +70,23 @@ async def home():
     return {'status': 'OK'}
 
 
-@app.get('/send')
-async def send_message_view(message: str, contact: str, sender_name: str):
+@app.post('/send')
+async def send_message_view(message: Message):
     # Two parts, GSM default / UCS2, SMS with UDH
     parts, encoding_flag, msg_type_flag = smpplib.gsm.make_parts(
-        message, encoding=get_encoding(message))
+        message.message, encoding=get_encoding(message.message))
 
     for part in parts:
         pdu = client.send_message(
             source_addr_ton=smpplib.consts.SMPP_TON_ALNUM,
             source_addr_npi=smpplib.consts.SMPP_NPI_UNK,
             # Make sure it is a byte string, not unicode:
-            source_addr=sender_name,
+            source_addr=message.sender_name,
 
             dest_addr_ton=smpplib.consts.SMPP_TON_INTL,
             dest_addr_npi=smpplib.consts.SMPP_NPI_ISDN,
             # Make sure these two params are byte strings, not unicode:
-            destination_addr=contact,
+            destination_addr=message.contact,
             short_message=part,
 
             data_coding=encoding_flag,
@@ -94,7 +94,9 @@ async def send_message_view(message: str, contact: str, sender_name: str):
             registered_delivery=True,
         )
         sys.stdout.write(
-            f"HTTP API: {pdu.sequence} - {sender_name} - {contact}\n")
+            f"HTTP API: {pdu.sequence} - {message.sender_name}"
+            f" - {message.contact}\n"
+        )
     return f'Success: "{pdu.sequence}"'
 
 

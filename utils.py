@@ -1,6 +1,13 @@
 import http.client
 import json
 import redis
+from pydantic import BaseModel
+
+
+class Message(BaseModel):
+    contact: str
+    sender_name: str
+    message: str
 
 
 def send_delivery_sm(messageid, message_status, id_smsc):
