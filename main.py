@@ -70,7 +70,7 @@ async def home():
     return {'status': 'OK'}
 
 
-@app.get('/send-message')
+@app.get('/send')
 async def send_message_view(message: str, contact: str, sender_name: str):
     # Two parts, GSM default / UCS2, SMS with UDH
     parts, encoding_flag, msg_type_flag = smpplib.gsm.make_parts(
