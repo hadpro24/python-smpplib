@@ -29,7 +29,7 @@ class PersistentSequenceGenerator(object):
     PERSISTENCE_NAME = 'provider_sequences'
 
     def __init__(self):
-        self.redis = redis.Redis(host='10.106.0.2', port=6379, db=2)
+        self.redis = redis.Redis(host='127.0.0.1', port=6379, db=2)
         actual_value = self.redis.get(self.PERSISTENCE_NAME)
         if actual_value:
             self._sequence = int(actual_value, 0)

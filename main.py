@@ -62,6 +62,7 @@ client.set_message_received_handler(lambda pdu: handle_deliver_sm(pdu))
 
 client.connect()
 client.bind_transceiver(system_id='nimbas2', password='Pas@024')
+sys.stdout.write('Started BOUND_TRX...')
 
 
 @app.get("/")
