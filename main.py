@@ -3,18 +3,20 @@ import sys
 from threading import Thread
 from fastapi import FastAPI
 import uvicorn
-import gsm0338
+# import gsm0338
 
 import smpplib.gsm
 import smpplib.client
 import smpplib.consts
-from producer import publish
-from utils import PersistentSequenceGenerator
+from utils import PersistentSequenceGenerator, send_delivery_sm
 from couter import SMSCounter
 
 # if you want to know what's happening
 app = FastAPI()
 logging.basicConfig(level='DEBUG')
+
+generator = PersistentSequenceGenerator()
+
 
 def get_encoding(message):
     m = SMSCounter.count(message)
@@ -25,18 +27,32 @@ def get_encoding(message):
     }
     return encode_m.get(m['encoding'], 'GSM_7BIT')
 
+
 def send_message_sm(pdu):
-    sys.stdout.write('sent {} {} - {}\n'.format(pdu.sequence, pdu.message_id, pdu))
-    print(pdu.message_id)
-    publish('messageid_available', {'messageid': pdu.message_id.decode(), 'message_sequence': str(pdu.sequence)})
+    sys.stdout.write('MT {} {}: {} - {}\n'.format(
+        pdu.sequence, pdu.message_id, pdu.status, pdu.get_status_desc()))
+    if pdu.is_error:
+        generator.set_value_with_expiry(
+            key=f'msgid:{pdu.sequence}',
+            value=str(pdu.message_id.decode())
+        )
+
 
 def handle_deliver_sm(pdu):
-    sys.stdout.write('delivered {} - {}\n'.format(pdu.receipted_message_id, pdu.sequence))
-    #publish('webhook_delivery', {'messageid': pdu.receipted_message_id.decode(), 'message_sequence': str(pdu.sequence)})
-    return 0 # cmd status for deliver_sm_resp
+    sys.stdout.write('DLR {} (msgid : {}) - {}\n'.format(
+        pdu.sequence, pdu.receipted_message_id, pdu.status))
+    send_delivery_sm(
+        messageid=pdu.sequence,
+        message_status=pdu.status,
+        id_smsc=pdu.receipted_message_id.decode()
+    )
+    return True
 
-generator = PersistentSequenceGenerator()
-client = smpplib.client.Client('102.176.160.15', 7502, sequence_generator=generator)
+
+client = smpplib.client.Client(
+    '102.176.160.207', 5001, sequence_generator=generator,
+    allow_unknown_opt_params=True
+)
 
 # Print when obtain message_id
 client.set_message_sent_handler(lambda pdu: send_message_sm(pdu))
@@ -45,7 +61,7 @@ client.set_message_sent_handler(lambda pdu: send_message_sm(pdu))
 client.set_message_received_handler(lambda pdu: handle_deliver_sm(pdu))
 
 client.connect()
-client.bind_transceiver(system_id='nimba', password='$re2@!23')
+client.bind_transceiver(system_id='nimbas2', password='Pas@024')
 
 
 @app.get("/")
@@ -54,9 +70,10 @@ async def home():
 
 
 @app.get('/send-message')
-async def send_message_view(message:str, contact:str, sender_name:str):
+async def send_message_view(message: str, contact: str, sender_name: str):
     # Two parts, GSM default / UCS2, SMS with UDH
-    parts, encoding_flag, msg_type_flag = smpplib.gsm.make_parts(message, encoding=get_encoding(message))
+    parts, encoding_flag, msg_type_flag = smpplib.gsm.make_parts(
+        message, encoding=get_encoding(message))
 
     for part in parts:
         pdu = client.send_message(
@@ -75,8 +92,9 @@ async def send_message_view(message:str, contact:str, sender_name:str):
             esm_class=msg_type_flag,
             registered_delivery=True,
         )
-        print(pdu.sequence)
-    return {'message_sequence': pdu.sequence}
+        sys.stdout.write(
+            f"HTTP API: {pdu.sequence} - {sender_name} - {contact}\n")
+    return f'Success: "{pdu.sequence}"'
 
 
 class PropagatingThread(Thread):
@@ -85,7 +103,8 @@ class PropagatingThread(Thread):
         try:
             if hasattr(self, '_Thread__target'):
                 # Thread uses name mangling prior to Python 3.
-                self.ret = self._Thread__target(*self._Thread__args, **self._Thread__kwargs)
+                self.ret = self._Thread__target(
+                    *self._Thread__args, **self._Thread__kwargs)
             else:
                 self.ret = self._target(*self._args, **self._kwargs)
         except BaseException as e:
@@ -96,6 +115,7 @@ class PropagatingThread(Thread):
         if self.exc:
             raise self.exc
         return self.ret
+
 
 if __name__ == '__main__':
     # start loop
