@@ -71,10 +71,10 @@ async def home():
 
 
 @app.post('/send')
-async def send_message_view(message: Message):
+async def send_message_view(message: str, sender_name: str, contact: str):
     # Two parts, GSM default / UCS2, SMS with UDH
     parts, encoding_flag, msg_type_flag = smpplib.gsm.make_parts(
-        message.message, encoding=get_encoding(message.message))
+        message, encoding=get_encoding(message))
 
     for part in parts:
         pdu = client.send_message(
@@ -86,7 +86,7 @@ async def send_message_view(message: Message):
             dest_addr_ton=smpplib.consts.SMPP_TON_INTL,
             dest_addr_npi=smpplib.consts.SMPP_NPI_ISDN,
             # Make sure these two params are byte strings, not unicode:
-            destination_addr=message.contact,
+            destination_addr=contact,
             short_message=part,
 
             data_coding=encoding_flag,
@@ -94,8 +94,7 @@ async def send_message_view(message: Message):
             registered_delivery=True,
         )
         sys.stdout.write(
-            f"HTTP API: {pdu.sequence} - {message.sender_name}"
-            f" - {message.contact}\n"
+            f"HTTP API: {pdu.sequence} - {sender_name} - {contact}\n"
         )
     return f'Success: "{pdu.sequence}"'
 
