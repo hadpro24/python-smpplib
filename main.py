@@ -8,7 +8,7 @@ import uvicorn
 import smpplib.gsm
 import smpplib.client
 import smpplib.consts
-from utils import PersistentSequenceGenerator, send_delivery_sm, Message
+from utils import PersistentSequenceGenerator, send_delivery_sm
 from couter import SMSCounter
 
 # if you want to know what's happening
@@ -23,7 +23,7 @@ def get_encoding(message):
     encode_m = {
         'GSM_7BIT': smpplib.consts.SMPP_ENCODING_DEFAULT,
         'GSM_7BIT_EX': smpplib.consts.SMPP_ENCODING_DEFAULT,
-        'UTF16': smpplib.consts.SMPP_ENCODING_ISO10646,
+        'UTF16': smpplib.consts.SMPP_ENCODING_BINARY2,
     }
     return encode_m.get(m['encoding'], 'GSM_7BIT')
 
