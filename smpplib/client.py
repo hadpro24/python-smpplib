@@ -301,7 +301,7 @@ class Client(object):
     def set_message_sent_handler(self, func):
         """Set new function to handle message sent event"""
         self.message_sent_handler = func
-
+        
     def set_query_resp_handler(self, func):
         """Set new function to handle query resp event"""
         self.query_resp_handler = func
