@@ -81,7 +81,7 @@ async def send_message_view(message: str, sender_name: str, contact: str):
             source_addr_ton=smpplib.consts.SMPP_TON_ALNUM,
             source_addr_npi=smpplib.consts.SMPP_NPI_UNK,
             # Make sure it is a byte string, not unicode:
-            source_addr=message.sender_name,
+            source_addr=sender_name,
 
             dest_addr_ton=smpplib.consts.SMPP_TON_INTL,
             dest_addr_npi=smpplib.consts.SMPP_NPI_ISDN,
