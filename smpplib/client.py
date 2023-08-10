@@ -156,7 +156,7 @@ class Client(object):
         """Send bind_transmitter command to the SMSC"""
 
         if command_name in ('bind_receiver', 'bind_transceiver'):
-            #self.logger.debug('Receiver mode')
+            self.logger.debug('Receiver mode')
 
         p = smpp.make_pdu(command_name, client=self, **kwargs)
 
@@ -206,9 +206,9 @@ class Client(object):
                 consts.DESCRIPTIONS[consts.SMPP_ESME_RINVBNDSTS],
             ))
 
-        #self.logger.debug('Sending %s PDU', p.command)
+        self.logger.debug('Sending %s PDU', p.command)
         generated = p.generate()
-        #self.logger.debug('>>%s (%d bytes)', binascii.b2a_hex(generated), len(generated))
+        self.logger.debug('>>%s (%d bytes)', binascii.b2a_hex(generated), len(generated))
 
         try:
             self._socket.sendall(generated)
@@ -241,7 +241,7 @@ class Client(object):
     def read_pdu(self):
         """Read PDU from the SMSC"""
 
-        #self.logger.debug('Waiting for PDU...')
+        self.logger.debug('Waiting for PDU...')
 
         raw_len = self._recv_exact(4)
 
@@ -253,7 +253,7 @@ class Client(object):
 
         raw_pdu = raw_len + self._recv_exact(length - 4)
 
-        #self.logger.debug('<<%s (%d bytes)', binascii.b2a_hex(raw_pdu), len(raw_pdu))
+        self.logger.debug('<<%s (%d bytes)', binascii.b2a_hex(raw_pdu), len(raw_pdu))
 
         pdu = smpp.parse_pdu(
             raw_pdu,
@@ -261,7 +261,7 @@ class Client(object):
             allow_unknown_opt_params=self.allow_unknown_opt_params,
         )
 
-        #self.logger.debug('Read %s PDU', pdu.command)
+        self.logger.debug('Read %s PDU', pdu.command)
 
         if pdu.is_error():
             return pdu
@@ -349,7 +349,7 @@ class Client(object):
             except socket.timeout:
                 if not auto_send_enquire_link:
                     raise
-                #self.logger.debug('Socket timeout, listening again')
+                self.logger.debug('Socket timeout, listening again')
                 pdu = smpp.make_pdu('enquire_link', client=self)
                 self.send_pdu(pdu)
                 return
