@@ -23,7 +23,7 @@ def get_encoding(message):
     encode_m = {
         'GSM_7BIT': smpplib.consts.SMPP_ENCODING_DEFAULT,
         'GSM_7BIT_EX': smpplib.consts.SMPP_ENCODING_DEFAULT,
-        'UTF16': smpplib.consts.SMPP_ENCODING_BINARY2,
+        'UTF16': smpplib.consts.SMPP_ENCODING_ISO88591,
     }
     return encode_m.get(m['encoding'], 'GSM_7BIT')
 

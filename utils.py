@@ -1,6 +1,7 @@
 import http.client
 import json
 import redis
+import uuid
 from pydantic import BaseModel
 
 
@@ -55,9 +56,7 @@ class PersistentSequenceGenerator(object):
 
     @property
     def sequence(self):
-        return int(self.redis.get(self.PERSISTENCE_NAME), 0)
+        return str(uuid.uuid4())
 
     def next_sequence(self):
-        next_value = int(self.get_value(self.PERSISTENCE_NAME), 0) + 1
-        self.redis.set(self.PERSISTENCE_NAME, next_value)
-        return next_value
+        return str(uuid.uuid4())
